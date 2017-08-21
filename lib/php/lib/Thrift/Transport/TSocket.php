@@ -267,9 +267,7 @@ class TSocket extends TTransport
   {
     $null = null;
     $read = array($this->handle_);
-    iff (false === ($readable = @stream_select($read, $null, $null, $this->recvTimeoutSec_, $this->recvTimeoutUsec_))) {
-        throw new TTransportException('TSocket: timed out reading '.$len.' bytes from '.$this->host_.':'.$this->port_);
-    }
+    $readable = @stream_select($read, $null, $null, $this->recvTimeoutSec_, $this->recvTimeoutUsec_);
 
     if ($readable > 0) {
       $data = fread($this->handle_, $len);
@@ -305,14 +303,11 @@ class TSocket extends TTransport
     // keep writing until all the data has been written
     while (TStringFuncFactory::create()->strlen($buf) > 0) {
       // wait for stream to become available for writing
-      if (false === ($writable = @stream_select($null, $write, $null, $this->sendTimeoutSec_, $this->sendTimeoutUsec_))) {
-          throw new TTransportException('TSocket: timed out writing '.TStringFuncFactory::create()->strlen($buf).' bytes from '.
-              $this->host_.':'.$this->port_);
-      }
+      $writable = @stream_select($null, $write, $null, $this->sendTimeoutSec_, $this->sendTimeoutUsec_);
       if ($writable > 0) {
         // write buffer to stream
         $written = fwrite($this->handle_, $buf);
-        if ($written === -1 || $written === false) {
+        if ($written === 0 || $written === -1 || $written === false) {
           throw new TTransportException('TSocket: Could not write '.TStringFuncFactory::create()->strlen($buf).' bytes '.
                                    $this->host_.':'.$this->port_);
         }
